@@ -16,6 +16,55 @@ function download {
     fi
 }
 
+####################################################################
+# Get arguments
+####################################################################
+
+while getopts 'r' flag; do
+  case "${flag}" in
+    r) REFRESH=true ;;
+    *) error "Unexpected option ${flag}" ;;
+  esac
+done
+
+####################################################################
+# Chech if certificates should be downloaded
+####################################################################
+
+if [[ ! -d "$DIR" ]] || [[ -z `ls -A "$DIR"` ]]; then
+     read -p "Do you want to download certificates? [Y/n] " -n 1 -r
+      echo
+      if [[ $REPLY =~ ^[Yy]$ ]]
+      then
+          REFRESH=true
+      fi
+else
+    echo "Certificates already downloaded"
+fi
+
+####################################################################
+# Download certificates 
+####################################################################
+
+if [ "$REFRESH" = true ] ; then
+  rm -r $DIR; mkdir $DIR;
+
+
+  if ! [ -x "$(which jq)" ] ; then
+        echo "Could not find jq, please install one." >&2
+        exit 1
+    fi
+
+  # copy(Array.from(document.querySelectorAll('.roots tr a')).map(a => a.href).filter(a => a.includes('/DigiCert')).filter(a => a.endsWith('.pem')))
+  cat ./certs.json | jq -r '.[]' | while read object; do
+      download $object ./certs
+  done
+fi
+
+####################################################################
+# Chech if the system is Ubuntu, if yes symlink mozilla certs
+####################################################################
+
 if [ "$DISTRO" == "Ubuntu" ]; then
   read -p "Are you running Ubuntu? [Y/n] " -n 1 -r
   echo
@@ -25,6 +74,10 @@ if [ "$DISTRO" == "Ubuntu" ]; then
       exit 
   fi
 fi
+
+####################################################################
+# Chech if the system is Fedora
+####################################################################
 
 if [ "$DISTRO" == "Fedora" ]; then
   read -p "Are you running Fedora? [Y/n] " -n 1 -r
@@ -40,38 +93,9 @@ if [ "$DONE" = false ] ; then
   echo "Contact marko@weareneopix.com"
 fi
 
-while getopts 'r' flag; do
-  case "${flag}" in
-    r) REFRESH=true ;;
-    *) error "Unexpected option ${flag}" ;;
-  esac
-done
-
-if [[ ! -d "$DIR" ]] || [[ -z `ls -A "$DIR"` ]]; then
-     read -p "Do you want to download certificates? [Y/n] " -n 1 -r
-      echo    # (optional) move to a new line
-      if [[ $REPLY =~ ^[Yy]$ ]]
-      then
-          REFRESH=true
-      fi
-else
-    echo "Certificates already downloaded"
-fi
-
-
-if [ "$REFRESH" = true ] ; then
-  rm -r $DIR; mkdir $DIR;
-
-
-  if ! [ -x "$(which jq)" ] ; then
-        echo "Could not find jq, please install one." >&2
-    fi
-
-  # copy(Array.from(document.querySelectorAll('.roots tr a')).map(a => a.href).filter(a => a.includes('/DigiCert')).filter(a => a.endsWith('.pem')))
-  cat ./certs.json | jq -r '.[]' | while read object; do
-      download $object ./certs
-  done
-fi
+####################################################################
+# On Fedora and other distros copy the certs folder
+####################################################################
 
 if [ "$DONE" = true ] ; then
   sudo cp ./certs/* /opt/Citrix/ICAClient/keystore/cacerts/

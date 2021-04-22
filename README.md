@@ -30,3 +30,7 @@ bash run.sh
 | Argument | Description                          |
 | :------: | ------------------------------------ |
 |   `-r`   | Refresh/re-download the certificates |
+
+## Credits
+
+All certificates provided by [digicert](https://www.digicert.com/kb/digicert-root-certificates.htm).

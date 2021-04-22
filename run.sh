@@ -3,7 +3,6 @@
 REFRESH=false
 DIR="./certs"
 DONE=false
-DISTRO=$(lsb_release -i | cut -d: -f2 | sed s/'^\t'//)
 
 function download {
     url=$1
@@ -15,6 +14,27 @@ function download {
         echo "Could not find wget, please install one." >&2
     fi
 }
+
+if [ -f /etc/os-release ]; then
+    # freedesktop.org and systemd
+    . /etc/os-release
+    OS=$NAME
+elif type lsb_release >/dev/null 2>&1; then
+    # linuxbase.org
+    OS=$(lsb_release -si)
+elif [ -f /etc/lsb-release ]; then
+    # For some versions of Debian/Ubuntu without lsb_release command
+    . /etc/lsb-release
+    OS=$DISTRIB_ID
+elif [ -f /etc/debian_version ]; then
+    # Older Debian/Ubuntu/etc.
+    OS=Debian
+else
+    # Fall back to uname, e.g. "Linux <version>", also works for BSD, etc.
+    OS=$(uname -s)
+fi
+
+OS=${OS,,}
 
 ####################################################################
 # Get arguments
@@ -65,7 +85,7 @@ fi
 # Chech if the system is Ubuntu, if yes symlink mozilla certs
 ####################################################################
 
-if [ "$DISTRO" == "Ubuntu" ]; then
+if [ "$OS" == "ubuntu" ]; then
   read -p "Are you running Ubuntu? [Y/n] " -n 1 -r
   echo
   if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -79,7 +99,7 @@ fi
 # Chech if the system is Fedora
 ####################################################################
 
-if [ "$DISTRO" == "Fedora" ]; then
+if [ "$OS" == "fedora" ]; then
   read -p "Are you running Fedora? [Y/n] " -n 1 -r
   echo
   if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -89,7 +109,7 @@ fi
 
 
 if [ "$DONE" = false ] ; then
-  echo "Looks like your distro '$DISTRO' is not suported/tested at the moment. Or something went wrong."
+  echo "Looks like your distro '$OS' is not suported/tested at the moment. Or something went wrong."
   echo "Contact marko@weareneopix.com"
 fi
 

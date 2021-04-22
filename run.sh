@@ -62,6 +62,11 @@ fi
 if [ "$REFRESH" = true ] ; then
   rm -r $DIR; mkdir $DIR;
 
+
+  if ! [ -x "$(which jq)" ] ; then
+        echo "Could not find jq, please install one." >&2
+    fi
+
   # copy(Array.from(document.querySelectorAll('.roots tr a')).map(a => a.href).filter(a => a.includes('/DigiCert')).filter(a => a.endsWith('.pem')))
   cat ./certs.json | jq -r '.[]' | while read object; do
       download $object ./certs
